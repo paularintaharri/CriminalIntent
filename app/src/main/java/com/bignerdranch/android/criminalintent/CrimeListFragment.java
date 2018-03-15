@@ -5,7 +5,6 @@ import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.text.format.DateFormat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,6 +13,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.List;
 
 /**
@@ -26,6 +27,11 @@ public class CrimeListFragment extends Fragment {
     private static final int IS_REGULAR_CRIME = 0;
     private static final int IS_SERIOUS_CRIME = 1;
     private int mLastUpdatedPosition = -1;
+    private static final int REQUEST_CRIME = 1;
+    private int clickedCrimePosition;
+    private static final String CLICKED_CRIME_POSITION_ID = "clicked_crime_position_id";
+
+
 
 
     @Override
@@ -37,7 +43,7 @@ public class CrimeListFragment extends Fragment {
                 .findViewById(R.id.crime_recycler_view);
         mCrimeRecyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
 
-        updateUI();
+       // updateUI();
 
         return view;
     }
@@ -88,16 +94,26 @@ public class CrimeListFragment extends Fragment {
         public void bind(Crime crime) {
             mCrime = crime;
             mTitleTextView.setText(mCrime.getTitle());
-            mDateTextView.setText(DateFormat.format("EEEE, MMM dd, yyyy", mCrime.getDate()));
+           // mDateTextView.setText(DateFormat.format("EEEE, MMM dd, yyyy", mCrime.getDate()));
+            DateFormat dateFormat = new SimpleDateFormat(CrimeFragment.DATE_FORMAT);
+            DateFormat timeFormat = new SimpleDateFormat(CrimeFragment.TIME_FORMAT);
+            mDateTextView.setText(dateFormat.format(mCrime.getDate()) + " " + timeFormat.format(mCrime.getTime()));
             mSolvedImageView.setVisibility(crime.isSolved() ? View.VISIBLE : View.GONE);
 
         }
 
         @Override
         public void onClick(View view) {
-            Intent intent = CrimePagerActivity.newIntent(getActivity(), mCrime.getId());
             mLastUpdatedPosition = this.getAdapterPosition(); //Challenge: Efficient RecyclerView Reloading
-            startActivity(intent);
+            Intent intent = CrimePagerActivity.newIntent(getActivity(), mCrime.getId());
+            startActivityForResult(intent, REQUEST_CRIME);
+        }
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == REQUEST_CRIME) {
+            // Handle result
         }
     }
 
@@ -106,7 +122,6 @@ public class CrimeListFragment extends Fragment {
             super(inflater, parent, R.layout.list_item_crime);
         }
     }
-
     private class SeriousCrimeHolder extends CrimeHolder {
         private Button mContactPoliceButton;
 
@@ -157,5 +172,12 @@ public class CrimeListFragment extends Fragment {
         public int getItemCount() {
             return mCrimes.size();
         }
+
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle onSavedInstanceState) {
+        super.onSaveInstanceState(onSavedInstanceState);
+        onSavedInstanceState.putSerializable(CLICKED_CRIME_POSITION_ID, clickedCrimePosition);
     }
 }
